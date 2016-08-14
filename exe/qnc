@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+
+require 'QuizletNerdClient'
+require 'rubygems'
+require 'commander'
+require 'yaml'
+require 'launchy'
+require 'socket'
+require 'oauth2'
+require 'oauth2/access_token'
+require 'terminal-table'
+
+# chatter = QuizletNerdClient::Chatter.new
+# chatter.say_hello
+
+QuizletNerdClient::Command.new.run
