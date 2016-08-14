@@ -6,10 +6,11 @@ This is a (bad) **unofficial** command line client for Quizlet.com
 The current version offer this functionalities:
 
 * Login
-* Get list of classes
-* Get list of sets
-* Get list of terms for a specific set
-* Add a new term to a specific set.
+* `Get` list of `classes`
+* `Get` list of `sets`
+* `Get` list of `terms` for a specific `set`
+* `Add` a new `term` to a specific `set`.
+* `Delete` a `term` from a specific `set`.
 
 ## Installation
 
@@ -22,9 +23,9 @@ Or install it yourself as:
 1. Sign up on Quizlet.com *(you should already have an account...it's free!!!)*
 2. Go to the API documentation and create your own app.
 3. Copy your `client id` and your `app secret`.
-4. Initialize the Quizlet Nerd Client running this command: `./quizlet.rb init --client_id xxxx --app_secret yyyy` (Replace `xxxx` and `yyyy` with your data)
-5. Authorize the script running this command: `./quizlet.rb login`
-6. Interact with the api, for example you can run `./quizlet.rb sets`
+4. Initialize the Quizlet Nerd Client running this command: `qnc init --client_id xxxx --app_secret yyyy` (Replace `xxxx` and `yyyy` with your data)
+5. Authorize the script running this command: `qnc login`
+6. Interact with the api, for example you can run `qnc sets`
 6. Enjoy.
 
 ## About the login
