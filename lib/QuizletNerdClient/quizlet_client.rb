@@ -92,9 +92,21 @@ module QuizletNerdClient
       validate_response(response)
     end
 
+    def update_class(class_id, name, description)
+      exit ERROR_UNAUTHORIZED unless authorized?
+      response = @api_token.put("https://api.quizlet.com/2.0/classes/#{class_id}", params: { 'name' => name, 'description' => description })
+      validate_response(response)
+    end
+
     def delete_term(set, term_id)
       exit ERROR_UNAUTHORIZED unless authorized?
       response = @api_token.delete("https://api.quizlet.com/2.0/sets/#{set}/terms/#{term_id}")
+      validate_response(response)
+    end
+
+    def delete_class(class_id)
+      exit ERROR_UNAUTHORIZED unless authorized?
+      response = @api_token.delete("https://api.quizlet.com/2.0/classes/#{class_id}")
       validate_response(response)
     end
 

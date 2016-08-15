@@ -244,7 +244,7 @@ command :add do |c|
         puts JSON.pretty_generate(result)
       end
     end
-  end  
+  end
 
   # ===============================
   # ADD TERM
@@ -269,6 +269,29 @@ command :add do |c|
 end
 
 # ===============================
+# UPDATE COMMANDS
+# ===============================
+desc 'Update items from Quizlet.com'
+command :update do |c|
+  # ===============================
+  # UPDATE CLASS
+  # ===============================
+  c.desc 'Update name and description of a class'
+  c.command :class do |update_class|
+    update_class.flag [:c, :class, 'class'], required: true
+    update_class.flag [:n, :name, 'name'], required: true
+    update_class.flag [:d, :description, 'description'], required: true
+
+    update_class.action do |global_options, options, args|
+      result = QuizLetClient.new.update_class(options[:class], options[:name], options[:description])
+
+      # This call should return something but for some reason (bug?) it doesn't.
+      # I sent a message to the quizlet guys
+    end
+  end
+end
+
+# ===============================
 # DELETE COMMANDS
 # ===============================
 desc 'Delete items from Quizlet.com'
@@ -283,6 +306,18 @@ command :delete do |c|
 
     delete_term.action do |_global_options, options, _args|
       QuizLetClient.new.delete_term(options[:set], options[:term])
+    end
+  end
+
+  # ===============================
+  # DELETE CLASS
+  # ===============================
+  c.desc 'Delete a class'
+  c.command :class do |delete_class|
+    delete_class.flag [:c, :class, 'class'], required: true
+
+    delete_class.action do |global_options, options, args|
+      QuizLetClient.new.delete_class(options[:class])
     end
   end
 end
