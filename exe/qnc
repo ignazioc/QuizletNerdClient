@@ -106,9 +106,9 @@ command :get do |c|
   # ===============================
   # GET PROFILE
   # ===============================
-  c.desc 'get user\'s profile'
+  c.desc 'Get user\'s profile'
   c.command :profile do |get_profile|
-    get_profile.action do |_global_options, _options, _args|
+    get_profile.action do |_global_options, options, args|
       puts QuizLetClient.new.profile
     end
   end
@@ -116,32 +116,60 @@ command :get do |c|
   # ===============================
   # GET CLASSES
   # ===============================
-  c.desc 'get user\'s classes'
+  c.desc 'Get user\'s classes'
   c.command :classes do |get_classes|
-    get_classes.action do |global_options, _options, _args|
+    get_classes.action do |global_options, options, args|
       result = QuizLetClient.new.classes
 
-      keys = %w(id name)
+	  keys = %w(id name)
+      result = result.map { |hash| hash.filter(keys) }
+      
       if global_options[:format] == 'table'
         formatter = OutputFormatter.new
         formatter.print_array_table(result, keys)
       else
-        puts JSON.pretty_generate(result.map { |row| row.select { |k, _v| keys.include?(k) } })
+        puts JSON.pretty_generate(result)
       end
     end
   end
 
   # ===============================
-  # GET SETS
+  # GET CLASS
   # ===============================
-  c.desc 'get user\'s sets'
-  c.command :sets do |get_sets|
-    get_sets.desc 'Quizlet username'
-    get_sets.action do |global_options, _options, _args|
-      result = QuizLetClient.new.sets
+  c.desc 'Get a class'
+  c.command :class do |get_class|
+  	get_class.flag [:c, :class, 'class'], required: true
+    get_class.action do |global_options, options, args|
+      result = QuizLetClient.new.class(options[:class])
+      
+      keys = %w(id name url set_count)
+      result = result.filter(keys)
+
       if global_options[:format] == 'table'
         formatter = OutputFormatter.new
-        formatter.print_array_table(result, %w(id title))
+        formatter.print_hash_table(result)
+      else
+        puts JSON.pretty_generate(result)
+      end
+    end
+  end
+
+
+
+  # ===============================
+  # GET SETS
+  # ===============================
+  c.desc 'Get user\'s sets'
+  c.command :sets do |get_sets|
+    get_sets.action do |global_options, options, args|
+      result = QuizLetClient.new.sets
+
+      keys = %w(id title)
+      result = result.map { |hash| hash.filter(keys) }
+
+      if global_options[:format] == 'table'
+        formatter = OutputFormatter.new
+        formatter.print_array_table(result, keys)
       else
         puts JSON.pretty_generate(result)
       end
@@ -151,15 +179,18 @@ command :get do |c|
   # ===============================
   # GET TERMS
   # ===============================
-  c.desc 'get all the terms in a specific set'
+  c.desc 'Get all the terms in a specific set'
   c.command :terms do |get_terms|
     get_terms.flag [:s, :set, 'set'], required: true
-    get_terms.action do |global_options, options, _args|
+    get_terms.action do |global_options, options, args|
       result = QuizLetClient.new.terms(options[:set])
+
+      keys = %w(id term definition)
+      result = result.map { |hash| hash.filter(keys) }
 
       if global_options[:format] == 'table'
         formatter = OutputFormatter.new
-        formatter.print_array_table(result, %w(id term definition))
+        formatter.print_array_table(result, keys)
       else
         puts JSON.pretty_generate(result)
       end

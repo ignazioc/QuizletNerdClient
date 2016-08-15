@@ -4,7 +4,7 @@ class OutputFormatter
     table.headings = keys.map(&:capitalize)
 
     result_list.each do |row|
-      table.add_row row.values_at(*keys)
+      table.add_row(row.values)
     end
     puts table
   end
