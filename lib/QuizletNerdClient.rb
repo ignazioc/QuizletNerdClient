@@ -12,6 +12,7 @@ require 'QuizletNerdClient/version'
 require 'QuizletNerdClient/preference_manager'
 require 'QuizletNerdClient/http_server'
 require 'QuizletNerdClient/quizlet_client'
+require 'QuizletNerdClient/output_formatter'
 
 module QuizletNerdClient
   # Exit codes:
@@ -21,8 +22,6 @@ module QuizletNerdClient
   ERROR_UNAUTHORIZED = 4
 
   class Command
-
-
     include Commander::Methods
 
     def initialize
@@ -136,14 +135,10 @@ module QuizletNerdClient
         c.description = c.summary
         c.example 'description', 'qnc classes'
         c.action do |_args, _options|
-          result = @quizlet_client.classes.map { |klass| { id: klass['id'], name: klass['name'] } }
+          result = @quizlet_client.classes
 
-          table = Terminal::Table.new
-          table.headings = %w(Id Name)
-          result.each do |row|
-            table.add_row [row[:id], row[:name]]
-          end
-          puts table
+          formatter = OutputFormatter.new
+          formatter.print_array_table(result, %w(id name))
         end
       end
 
@@ -156,14 +151,10 @@ module QuizletNerdClient
         c.description = c.summary
         c.example 'description', 'qnc sets'
         c.action do |_args, _options|
-          result = @quizlet_client.sets.map { |klass| { id: klass['id'], name: klass['title'] } }
+          result = @quizlet_client.sets
 
-          table = Terminal::Table.new
-          table.headings = %w(Id Name)
-          result.each do |row|
-            table.add_row [row[:id], row[:name]]
-          end
-          puts table
+          formatter = OutputFormatter.new
+          formatter.print_array_table(result, %w(id title))
         end
       end
 
@@ -177,14 +168,10 @@ module QuizletNerdClient
         c.example 'description', 'qnc terms --set 106787698'
         c.option '--set STRING', String, 'The set ID'
         c.action do |_args, options|
-          result = @quizlet_client.terms(options.set).map { |klass| { id: klass['id'], term: klass['term'], definition: klass['definition'] } }
+          result = @quizlet_client.terms(options.set)
 
-          table = Terminal::Table.new
-          table.headings = %w(Id Term Definition)
-          result.each do |row|
-            table.add_row [row[:id], row[:term], row[:definition]]
-          end
-          puts table
+          formatter = OutputFormatter.new
+          formatter.print_array_table(result, %w(id term definition))
         end
       end
 
@@ -202,10 +189,9 @@ module QuizletNerdClient
         c.action do |_args, options|
           result = @quizlet_client.add_term(options.set, options.term, options.definition)
 
-          table = Terminal::Table.new
-          table.headings = %w(Id Term Definition)
-          table.add_row [result['id'], result['term'], result['definition']]
-          puts table
+          formatter = OutputFormatter.new
+          puts result
+          formatter.print_hash_table(result)
         end
       end
 
@@ -220,11 +206,9 @@ module QuizletNerdClient
         c.option '--set STRING', String, 'The set ID'
         c.option '--term STRING', String, 'The term ID'
         c.action do |_args, options|
-          result = @quizlet_client.delete_term(options.set, options.term)
-
+          @quizlet_client.delete_term(options.set, options.term)
         end
       end
-
 
       # rubocop:enable Metrics/CyclomaticComplexity
 
