@@ -1,14 +1,213 @@
 #!/usr/bin/env ruby
 
 require 'QuizletNerdClient'
-require 'rubygems'
-require 'commander'
-require 'yaml'
-require 'launchy'
-require 'socket'
-require 'oauth2'
-require 'oauth2/access_token'
-require 'terminal-table'
 
+include GLI::App
+include QuizletNerdClient
 
-QuizletNerdClient::Command.new.run
+# Exit codes:
+ERROR_UNABLE_TO_AUTHORIZE = 2
+ERROR_UNAUTHORIZED = 3
+
+program_desc 'Unofficial & unsupported command line client for Quizlet.com'
+
+version QuizletNerdClient::VERSION
+
+subcommand_option_handling :normal
+arguments :strict
+
+# desc 'Describe some switch here'
+# switch [:s,:switch]
+
+desc 'Output format'
+default_value 'table'
+arg_name 'The name of the argument'
+flag [:f, :format, 'format'], must_match: %w(table json), required: true
+
+def initialized?
+  settings = PreferenceManager.instance
+  settings.client_id && settings.app_secret && settings.username
+end
+
+# ===============================
+# RESET
+# ===============================
+desc 'Delete the ~/.qnc.conf file'
+command :reset do |c|
+  c.action do |_global_options, _options, _args|
+    QuizLetClient.new.reset
+  end
+end
+
+# ===============================
+# INIT
+# ===============================
+desc 'Store the client-id, the app-secret and the username in ~/.quizlet.conf'
+command :init do |c|
+  c.desc 'Quizlet API client id'
+  c.flag [:c, :clientid, 'client-id'], required: true
+
+  c.desc 'Quizlet API app secret'
+  c.flag [:a, :appsecret, 'app-secret'], required: true
+
+  c.desc 'Quizlet username'
+  c.flag [:u, :username, 'username'], required: true
+
+  c.action do |_global_options, options, _args|
+    client_id = options[:clientid]
+    app_secret = options[:appsecret]
+    username = options[:username]
+
+    if !initialized? || agree('Overwrite your previous credentials? (Yes | No)')
+      PreferenceManager.instance.store_preferences(client_id, app_secret, username)
+    end
+  end
+end
+
+# ===============================
+# LOGIN
+# ===============================
+desc 'Login on Quizlet.com and authorize this script'
+command :login do |c|
+  c.action do |_global_options, _options, _args|
+    unless initialized?
+      puts "Missing configuration file.\nPlease run: 'qnc init --client_id xxxx --app_secret yyyy --username zzzz'"
+      exit_now! 'Configuration not found', ERROR_UNAUTHORIZED
+    end
+
+    quizlet_client = QuizLetClient.new
+    if quizlet_client.authorized?
+      puts "A token is already available, you don't need to login again. To login with different credentials run 'qnc reset'"
+
+    elsif agree('This script will open a new browser window, please login and authorize. Continue?  (Yes | No)')
+      # Open a browser
+      quizlet_client.authorize
+
+      # Start listening on port 8080
+      auth_code = HttpServer.new.listen
+
+      unless auth_code && !auth_code.empty?
+        puts 'Unable to get an authorization code'
+        exit_now! 'Unable to authorize', ERROR_UNABLE_TO_AUTHORIZE
+      end
+
+      # Request an API Token using the auth code.
+      quizlet_client.api_token(auth_code)
+      puts 'Token stored with success'
+    end
+  end
+end
+
+# ===============================
+# GET COMMANDS
+# ===============================
+desc 'Retrieve items from Quizlet.com'
+command :get do |c|
+  # ===============================
+  # GET PROFILE
+  # ===============================
+  c.desc 'get user\'s profile'
+  c.command :profile do |get_profile|
+    get_profile.action do |_global_options, _options, _args|
+      puts QuizLetClient.new.profile
+    end
+  end
+
+  # ===============================
+  # GET CLASSES
+  # ===============================
+  c.desc 'get user\'s classes'
+  c.command :classes do |get_classes|
+    get_classes.action do |global_options, _options, _args|
+      result = QuizLetClient.new.classes
+
+      keys = %w(id name)
+      if global_options[:format] == 'table'
+        formatter = OutputFormatter.new
+        formatter.print_array_table(result, keys)
+      else
+        puts JSON.pretty_generate(result.map { |row| row.select { |k, _v| keys.include?(k) } })
+      end
+    end
+  end
+
+  # ===============================
+  # GET SETS
+  # ===============================
+  c.desc 'get user\'s sets'
+  c.command :sets do |get_sets|
+    get_sets.desc 'Quizlet username'
+    get_sets.action do |global_options, _options, _args|
+      result = QuizLetClient.new.sets
+      if global_options[:format] == 'table'
+        formatter = OutputFormatter.new
+        formatter.print_array_table(result, %w(id title))
+      else
+        puts JSON.pretty_generate(result)
+      end
+    end
+  end
+
+  # ===============================
+  # GET TERMS
+  # ===============================
+  c.desc 'get all the terms in a specific set'
+  c.command :terms do |get_terms|
+    get_terms.flag [:s, :set, 'set'], required: true
+    get_terms.action do |global_options, options, _args|
+      result = QuizLetClient.new.terms(options[:set])
+
+      if global_options[:format] == 'table'
+        formatter = OutputFormatter.new
+        formatter.print_array_table(result, %w(id term definition))
+      else
+        puts JSON.pretty_generate(result)
+      end
+    end
+  end
+end
+
+desc 'Add items (like terms or sets) to Quizlet.com'
+command :add do |c|
+  # ===============================
+  # ADD TERM
+  # ===============================
+  c.desc 'Add a term to a specific set'
+  c.command :term do |add_term|
+    add_term.flag [:s, :set, 'set'], required: true
+    add_term.flag [:t, :term, 'term'], required: true
+    add_term.flag [:d, :definition, 'definition'], required: true
+
+    add_term.action do |global_options, options, _args|
+      result = QuizLetClient.new.add_term(options[:set], options[:term], options[:definition])
+
+      if global_options[:format] == 'table'
+        formatter = OutputFormatter.new
+        formatter.print_hash_table(result)
+      else
+        puts JSON.pretty_generate(result)
+      end
+    end
+  end
+end
+
+# ===============================
+# DELETE COMMANDS
+# ===============================
+desc 'Delete items from Quizlet.com'
+command :delete do |c|
+  # ===============================
+  # DELETE TERMS
+  # ===============================
+  c.desc 'Delete a term from a specific set'
+  c.command :term do |delete_term|
+    delete_term.flag [:s, :set, 'set'], required: true
+    delete_term.flag [:t, :term, 'term'], required: true
+
+    delete_term.action do |_global_options, options, _args|
+      QuizLetClient.new.delete_term(options[:set], options[:term])
+    end
+  end
+end
+
+exit run(ARGV)

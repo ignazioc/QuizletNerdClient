@@ -1,7 +1,6 @@
 
 module QuizletNerdClient
   class QuizLetClient
-    include Singleton
     def initialize
       @settings     = PreferenceManager.instance
       @client_id    = @settings.client_id
