@@ -62,6 +62,12 @@ module QuizletNerdClient
       validate_response(response)
     end
 
+    def class_sets(class_id)
+      exit ERROR_UNAUTHORIZED unless authorized?
+      response = @api_token.get("https://api.quizlet.com/2.0/classes/#{class_id}/sets")
+      validate_response(response)
+    end
+
     def sets
       exit ERROR_UNAUTHORIZED unless authorized?
       response = @api_token.get("https://api.quizlet.com/2.0/users/#{@settings.username}/sets")

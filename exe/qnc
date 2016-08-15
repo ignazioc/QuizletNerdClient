@@ -121,9 +121,30 @@ command :get do |c|
     get_classes.action do |global_options, options, args|
       result = QuizLetClient.new.classes
 
-	  keys = %w(id name)
+      keys = %w(id name)
       result = result.map { |hash| hash.filter(keys) }
-      
+
+      if global_options[:format] == 'table'
+        formatter = OutputFormatter.new
+        formatter.print_array_table(result, keys)
+      else
+        puts JSON.pretty_generate(result)
+      end
+    end
+  end
+
+  # ===============================
+  # GET CLASS's SETS
+  # ===============================
+  c.desc 'Get class\'s sets'
+  c.command :'class-sets' do |get_class_sets|
+    get_class_sets.flag [:c, :class, 'class'], required: true
+    get_class_sets.action do |global_options, options, args|
+      result = QuizLetClient.new.class_sets(options[:class])
+
+      keys = %w(id title)
+      result = result.map { |hash| hash.filter(keys) }
+
       if global_options[:format] == 'table'
         formatter = OutputFormatter.new
         formatter.print_array_table(result, keys)
@@ -138,10 +159,10 @@ command :get do |c|
   # ===============================
   c.desc 'Get a class'
   c.command :class do |get_class|
-  	get_class.flag [:c, :class, 'class'], required: true
+    get_class.flag [:c, :class, 'class'], required: true
     get_class.action do |global_options, options, args|
       result = QuizLetClient.new.class(options[:class])
-      
+
       keys = %w(id name url set_count)
       result = result.filter(keys)
 
