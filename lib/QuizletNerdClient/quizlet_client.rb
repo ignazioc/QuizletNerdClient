@@ -80,6 +80,12 @@ module QuizletNerdClient
       validate_response(response)
     end
 
+    def add_class(name, description)
+      exit ERROR_UNAUTHORIZED unless authorized?
+      response = @api_token.post("https://api.quizlet.com/2.0/classes", params: { 'name' => name, 'description' => description })
+      validate_response(response)
+    end
+
     def add_term(set, term, definition)
       exit ERROR_UNAUTHORIZED unless authorized?
       response = @api_token.post("https://api.quizlet.com/2.0/sets/#{set}/terms", params: { 'term' => term, 'definition' => definition })

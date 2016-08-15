@@ -219,8 +219,33 @@ command :get do |c|
   end
 end
 
+
+# ===============================
+# ADD COMMANDS
+# ===============================
 desc 'Add items (like terms or sets) to Quizlet.com'
 command :add do |c|
+
+  # ===============================
+  # ADD CLASS
+  # ===============================
+  c.desc 'Add a new class'
+  c.command :class do |add_class|
+    add_class.flag [:n, :name, 'name'], required: true
+    add_class.flag [:d, :description, 'description'], required: true
+
+    add_class.action do |global_options, options, _args|
+      result = QuizLetClient.new.add_class(options[:name], options[:description])
+
+      if global_options[:format] == 'table'
+        formatter = OutputFormatter.new
+        formatter.print_hash_table(result)
+      else
+        puts JSON.pretty_generate(result)
+      end
+    end
+  end  
+
   # ===============================
   # ADD TERM
   # ===============================
