@@ -247,6 +247,21 @@ command :add do |c|
   end
 
   # ===============================
+  # ADD SET TO A CLASS
+  # ===============================
+  c.desc 'Add a set to an existing class'
+  c.command :'set-to-class' do |add_set_to_class|
+    add_set_to_class.flag [:s, :set, 'set'], required: true
+    add_set_to_class.flag [:c, :class, 'class'], required: true
+
+    add_set_to_class.action do |global_options, options, _args|
+      result = QuizLetClient.new.add_set_to_class(options[:set], options[:class])
+
+      # This call should return something but for some reason (bug?) it doesn't.
+    end
+  end
+
+  # ===============================
   # ADD TERM
   # ===============================
   c.desc 'Add a term to a specific set'
