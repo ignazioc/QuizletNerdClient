@@ -116,6 +116,13 @@ module QuizletNerdClient
       validate_response(response)
     end
 
+    def delete_set_to_class(set_id,class_id)
+      exit ERROR_UNAUTHORIZED unless authorized?
+      response = @api_token.delete("https://api.quizlet.com/2.0/classes/#{class_id}/sets/#{set_id}")
+      validate_response(response)
+    end
+
+
     def validate_response(response)
       return response.parsed if response.error.nil?
       puts "Error: #{response.error}"
